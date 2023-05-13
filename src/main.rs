@@ -1,40 +1,34 @@
 use aho_corasick::AhoCorasick;
-use std::{io, fmt::Error};
+use std::io;
 
 fn main() -> io::Result<()> {
     println!("Init");
-
-    let command = git_checkout();  
+    let input = read_user_input();
+    let concatenated_input = clean(concatenate_input(input));
+    let command = git_checkout(concatenated_input);
     println!("{}", command);
     Ok(())
 }
 
-fn git_checkout() -> String {
-    let input = read_user_input();
-    let concatenated_input = concatenate_input(input);
-   clean(concatenated_input)
+fn git_checkout(branch_name: String) -> String {
+    "git checkout -b ".to_string() + &branch_name
 }
 
 fn read_user_input() -> Vec<String> {
-    let reader = io::stdin().lines();
-    let mut lines = Vec::new();
-    for (i, line) in reader.enumerate() {
-        lines.push(line.unwrap());
-    }
-
-    lines
-
+    io::stdin()
+        .lines()
+        .map(|e| e.unwrap_or("".to_string()))
+        .collect()
 }
 
-fn concatenate_input(input:Vec<String>) -> String {
+fn concatenate_input(input: Vec<String>) -> String {
     let mut concatenated: String = "".to_string();
-    for line in input{
+    for line in input {
         if concatenated.len() == 0 {
             concatenated = line;
-        }
-        else{
-        let new_line = str::replace(&line, " ", "-");
-        concatenated = concatenated + &"-".to_string() + &new_line;
+        } else {
+            let new_line = str::replace(&line, " ", "-");
+            concatenated = concatenated + &"-".to_string() + &new_line;
         }
     }
     concatenated
@@ -42,8 +36,8 @@ fn concatenate_input(input:Vec<String>) -> String {
 
 fn clean(haystack: String) -> String {
     let patterns = &[
-        "@", "/", " ", "^", "~", ":", "*", "?", "[", "]", "#", "$", "%", "&", "+", "=",
-        "(", ")", "!", "'", "\"", "#", "+"
+        "@", "/", " ", "^", "~", ":", "*", "?", "[", "]", "#", "$", "%", "&", "+", "=", "(", ")",
+        "!", "'", "\"", "#", "+", ">", "<", "?",
     ];
     let replace_with = &["-"].repeat(patterns.len());
     let ac = AhoCorasick::new(patterns);
@@ -52,24 +46,30 @@ fn clean(haystack: String) -> String {
 
     for (i, current_char) in result.chars().enumerate() {
         let next_char = result.chars().nth(i + 1).unwrap_or('-');
-        if current_char == '-' && next_char == '-' ||
-           clean.len() == 0 && current_char == '-' {
+        if current_char == '-' && next_char == '-' || clean.len() == 0 && current_char == '-' {
             continue;
         }
-            clean.push(current_char);
+        clean.push(current_char);
     }
 
     clean
 }
 
-
 #[test]
-fn it_handles_line_breaks(){
+fn it_handles_line_breaks() {
     let input = vec!["hola".to_string(), "chao".to_string()];
     let concatenated = concatenate_input(input);
     assert_eq!(concatenated, "hola-chao".to_string());
-    
 }
 
-
-
+#[test]
+fn it_cleans_forbidden_chars() {
+    let input = "hola!@#$%^&*()+=?><chao";
+    let cleaned = clean(input.to_string());
+    assert_eq!(cleaned, "hola-chao".to_string());
+}
+#[test]
+fn it_returns_checkout_command() {
+    let command = git_checkout("my-new-branch".to_string());
+    assert_eq!(command, "git checkout -b my-new-branch".to_string());
+}
