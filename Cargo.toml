@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 aho-corasick = "1.0.1"
+ctrlc = "3.2.5"
