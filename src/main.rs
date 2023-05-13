@@ -1,27 +1,43 @@
 use aho_corasick::AhoCorasick;
-use std::io;
+use std::{io, fmt::Error};
 
 fn main() -> io::Result<()> {
     println!("Init");
-    let input = concatenate_input();
-    let clean_input = clean(input);
-    println!("{}", clean_input);
 
+    let command = git_checkout();  
+    println!("{}", command);
     Ok(())
 }
 
-fn concatenate_input() -> String {
-    let mut input = String::new();
+fn git_checkout() -> String {
+    let input = read_user_input();
+    let concatenated_input = concatenate_input(input);
+   clean(concatenated_input)
+}
+
+fn read_user_input() -> Vec<String> {
     let reader = io::stdin().lines();
+    let mut lines = Vec::new();
     for (i, line) in reader.enumerate() {
-        let new_line = str::replace(&line.unwrap(), " ", "-");
-        if i == 0 {
-            input = new_line.clone();
-        } else {
-            input = input + &"-".to_string() + &new_line;
+        lines.push(line.unwrap());
+    }
+
+    lines
+
+}
+
+fn concatenate_input(input:Vec<String>) -> String {
+    let mut concatenated: String = "".to_string();
+    for line in input{
+        if concatenated.len() == 0 {
+            concatenated = line;
+        }
+        else{
+        let new_line = str::replace(&line, " ", "-");
+        concatenated = concatenated + &"-".to_string() + &new_line;
         }
     }
-    input
+    concatenated
 }
 
 fn clean(haystack: String) -> String {
@@ -45,3 +61,15 @@ fn clean(haystack: String) -> String {
 
     clean
 }
+
+
+#[test]
+fn it_handles_line_breaks(){
+    let input = vec!["hola".to_string(), "chao".to_string()];
+    let concatenated = concatenate_input(input);
+    assert_eq!(concatenated, "hola-chao".to_string());
+    
+}
+
+
+
