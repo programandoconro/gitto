@@ -1,12 +1,30 @@
 use aho_corasick::AhoCorasick;
 use std::io;
+use std::process::Command;
 
 fn main() -> io::Result<()> {
     println!("Init");
     let input = read_user_input();
     let concatenated_input = clean(concatenate_input(input));
-    let command = git_checkout(concatenated_input);
+    let command = git_checkout(concatenated_input.clone());
     println!("{}", command);
+    let mut input_to_confirm = String::new();
+    io::stdin().read_line(&mut input_to_confirm).unwrap();
+
+    let modified_command = command.trim();
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(modified_command)
+        .output()
+        .expect("failed to execute command");
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        println!("{}", stdout);
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprint!("{}", stderr);
+    }
     Ok(())
 }
 
