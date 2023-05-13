@@ -1,5 +1,5 @@
 use aho_corasick::AhoCorasick;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Error};
 use std::process::Command;
 
 fn main() {
@@ -10,12 +10,14 @@ fn main() {
     let command = git_checkout(concatenated_input);
     println!("{}", command);
 
-    if confirm() {
-        execute(command).expect("There was an error");
+    if confirm().is_ok() {
+        execute(command).expect("There was an error executing git command");
     }
+
+    println!("{}", "Finished");
 }
 
-fn execute(command: String) -> Result<i32, ()> {
+fn execute(command: String) -> Result<i32, i32> {
     let output = Command::new("sh")
         .arg("-c")
         .arg(command)
@@ -29,26 +31,25 @@ fn execute(command: String) -> Result<i32, ()> {
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr);
         eprint!("{}", stderr);
-        Err(())
+        Err(1)
     }
 }
 
-fn confirm() -> bool {
-    let stdin = io::stdin();
+fn confirm() -> Result<bool, Error> {
     let mut input = String::new();
+    let stdin = io::stdin();
 
     ctrlc::set_handler(move || {
         println!("Bye...");
-        std::process::exit(1); // exit the program
+        std::process::exit(1);
     })
     .expect("Error setting Ctrl-C handler");
 
+    println!("{}", "Press ENTER to confirm or Ctrl-C to cancel");
+
     match stdin.lock().read_line(&mut input) {
-        Ok(_) => true,
-        Err(e) => {
-            eprintln!("Error reading input: {}", e);
-            false
-        }
+        Ok(_) => Ok(true),
+        Err(e) => Err(e),
     }
 }
 
@@ -57,6 +58,8 @@ fn git_checkout(branch_name: String) -> String {
 }
 
 fn read_user_input() -> Vec<String> {
+    println!("Enter branch name, then press Enter and Ctrl-D to end:");
+
     io::stdin()
         .lines()
         .map(|e| e.unwrap_or("".to_string()))
@@ -105,7 +108,7 @@ fn it_handles_line_breaks() {
 }
 
 #[test]
-fn it_sanitazes_forbidden_chars() {
+fn it_sanitizes_forbidden_chars() {
     let input = "hola!@#$%^&*()+=?><chao";
     let cleaned = sanitize(input.to_string());
     assert_eq!(cleaned, "hola-chao".to_string());
