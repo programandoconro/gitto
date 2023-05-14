@@ -1,12 +1,11 @@
 use super::utils::{command_output, confirm, execute};
-use aho_corasick::AhoCorasick;
 extern crate skim;
 use skim::prelude::*;
 use std::io::Cursor;
 
 ///
 /// It creates a new git branch parsing and cleaning input. You can add multiples lines, incorrect
-/// characters and it will concatenate it using "-".
+///  and non ASCII characters, and it will concatenate the name  using "-" as separator.
 /// # Examples
 /// rusty-git-commands --command create
 ///
@@ -80,24 +79,33 @@ fn concatenate(input: Vec<String>) -> String {
 }
 
 fn sanitize(haystack: String) -> String {
-    let patterns = &[
-        "@", "/", " ", "^", "~", ":", "*", "?", "[", "]", "#", "$", "%", "&", "+", "=", "(", ")",
-        "!", "'", "\"", "#", "+", ">", "<", "?",
-    ];
-    let replace_with = &["-"].repeat(patterns.len());
-    let ac = AhoCorasick::new(patterns);
-    let result = ac.unwrap().replace_all(&haystack, replace_with);
-    let mut clean: String = String::new();
-
-    for (i, current_char) in result.chars().enumerate() {
-        let next_char = result.chars().nth(i + 1).unwrap_or('-');
-        if current_char == '-' && next_char == '-' || clean.len() == 0 && current_char == '-' {
-            continue;
+    let mut name = String::new();
+    for ch in haystack.chars() {
+        if ch.is_alphanumeric() && ch.is_ascii() {
+            name.push(ch);
+        } else {
+            let last_char = name.chars().last().unwrap_or('-');
+            if last_char != '-' {
+                name.push('-')
+            }
         }
-        clean.push(current_char);
     }
+    limit_name_len(name)
+}
 
-    clean
+fn limit_name_len(name: String) -> String {
+    if name.len() < 255 {
+        name
+    } else {
+        name[0..254].to_string()
+    }
+}
+
+#[test]
+fn it_limits_name_len() {
+    let long_name = "very long name".repeat(100);
+    assert!(long_name.len() >= 255);
+    assert!(limit_name_len(long_name).len() < 255);
 }
 
 #[test]
@@ -109,7 +117,7 @@ fn it_handles_line_breaks() {
 
 #[test]
 fn it_sanitizes_forbidden_chars() {
-    let input = "hola!@#$%^&*()+=?><chao";
+    let input = "hola!@#$%^&*()+=?><コンに感chao";
     let cleaned = sanitize(input.to_string());
     assert_eq!(cleaned, "hola-chao".to_string());
 }
