@@ -1,8 +1,8 @@
-use std::process::Command;
 use std::io::{self, BufRead, Error};
+use std::process::Command;
 
 pub fn command_output(command: &str, args: Vec<&str>) -> String {
-     let output = Command::new(command)
+    let output = Command::new(command)
         .args(&args)
         .output()
         .expect("Failed to execute command");
@@ -17,7 +17,17 @@ pub fn command_output(command: &str, args: Vec<&str>) -> String {
     result
 }
 
-pub fn execute(command: String) -> Result<i32, i32> {
+pub fn check_path_is_repository() {
+    match execute("git rev-parse --is-inside-work-tree") {
+        Ok(_) => (),
+        Err(_) => {
+            eprintln!("Path is not a git repository. Finished");
+            panic!("checking if path is a git repository");
+        }
+    }
+}
+
+pub fn execute(command: &str) -> Result<i32, i32> {
     let output = Command::new("sh")
         .arg("-c")
         .arg(command)
@@ -29,8 +39,6 @@ pub fn execute(command: String) -> Result<i32, i32> {
         println!("{}", stdout);
         Ok(0)
     } else {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        eprint!("{}", stderr);
         Err(1)
     }
 }
@@ -53,9 +61,8 @@ pub fn confirm() -> Result<bool, Error> {
     }
 }
 
-
 #[test]
 fn it_executes_shell_commands() {
-    let result = execute(format!("echo hola"));
+    let result = execute("echo hola");
     assert_eq!(result.unwrap(), 0);
 }

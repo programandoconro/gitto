@@ -1,12 +1,15 @@
+use super::utils::{command_output, confirm, execute};
 use aho_corasick::AhoCorasick;
-use super::utils::{execute, confirm, command_output};
 extern crate skim;
 use skim::prelude::*;
 use std::io::Cursor;
 
-
+///
 /// It creates a new git branch parsing and cleaning input. You can add multiples lines, incorrect
 /// characters and it will concatenate it using "-".
+/// # Examples
+/// rusty-git-commands --command create
+///
 pub fn create() {
     let input = read_user_input();
     let concatenated_input = sanitize(concatenate(input));
@@ -14,12 +17,16 @@ pub fn create() {
     println!("{}", command);
 
     if confirm().is_ok() {
-       execute(command).expect("There was an error executing git command");
+        execute(&command).expect("There was an error executing git command");
     }
 }
 
+///
 /// It switches to a different branch interactively using fzf. You can search best match, move the
-/// cursor or just hit enter to select the target branch. 
+/// cursor or just hit enter to select the target branch.
+/// # Examples
+/// rusty-git-commands --command switch
+///
 pub fn switch() {
     let options = SkimOptionsBuilder::default()
         .height(Some("50%"))
@@ -41,12 +48,10 @@ pub fn switch() {
         let command = "git checkout".to_string() + &item.output();
         println!("{}", command);
         if confirm().is_ok() {
-           execute(command).expect("There was an error executing git command");
+            execute(&command).expect("There was an error executing git command");
         }
     }
 }
-
-
 
 fn prepend_gitcheckout(branch_name: String) -> String {
     "git checkout -b ".to_string() + &branch_name
@@ -95,7 +100,6 @@ fn sanitize(haystack: String) -> String {
     clean
 }
 
-
 #[test]
 fn it_handles_line_breaks() {
     let input = vec!["hola".to_string(), "chao".to_string()];
@@ -107,7 +111,7 @@ fn it_handles_line_breaks() {
 fn it_sanitizes_forbidden_chars() {
     let input = "hola!@#$%^&*()+=?><chao";
     let cleaned = sanitize(input.to_string());
-assert_eq!(cleaned, "hola-chao".to_string());
+    assert_eq!(cleaned, "hola-chao".to_string());
 }
 
 #[test]
@@ -115,4 +119,3 @@ fn it_returns_checkout_command() {
     let command = prepend_gitcheckout("my-new-branch".to_string());
     assert_eq!(command, "git checkout -b my-new-branch".to_string());
 }
-

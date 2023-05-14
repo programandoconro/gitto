@@ -1,11 +1,12 @@
 mod commands;
-use clap::{ValueEnum, Parser};
 
+use clap::{Parser, ValueEnum};
+use commands::utils::check_path_is_repository;
 
 #[derive(ValueEnum, Clone, Debug)]
 enum Command {
     Switch,
-    Create
+    Create,
 }
 
 #[derive(Parser, Debug)]
@@ -15,15 +16,13 @@ struct Args {
 }
 
 fn main() {
-    println!("Init");
-    let args = Args::parse();
+    check_path_is_repository();
 
-    
+    let args = Args::parse();
     match args.command {
         Command::Create => commands::branch::create(),
         Command::Switch => commands::branch::switch(),
-    } 
+    }
 
     println!("Finished");
-
 }
