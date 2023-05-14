@@ -1,6 +1,6 @@
 use aho_corasick::AhoCorasick;
 use std::io::{self, BufRead, Error};
-mod utils;
+use super::utils::execute;
 
 pub fn create() {
     let input = read_user_input();
@@ -9,7 +9,7 @@ pub fn create() {
     println!("{}", command);
 
     if confirm().is_ok() {
-       utils::execute(command).expect("There was an error executing git command");
+       execute(command).expect("There was an error executing git command");
     }
 }
 

@@ -1,9 +1,9 @@
-mod branch;
+mod commands;
 
 fn main() {
     println!("Init");
 
-    branch::create();
+    commands::branch::create();
 
     println!("{}", "Finished");
 }
