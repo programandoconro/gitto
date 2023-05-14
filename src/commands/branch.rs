@@ -4,6 +4,22 @@ extern crate skim;
 use skim::prelude::*;
 use std::io::Cursor;
 
+
+/// It creates a new git branch parsing and cleaning input. You can add multiples lines, incorrect
+/// characters and it will concatenate it using "-".
+pub fn create() {
+    let input = read_user_input();
+    let concatenated_input = sanitize(concatenate(input));
+    let command = prepend_gitcheckout(concatenated_input);
+    println!("{}", command);
+
+    if confirm().is_ok() {
+       execute(command).expect("There was an error executing git command");
+    }
+}
+
+/// It switches to a different branch interactively using fzf. You can search best match, move the
+/// cursor or just hit enter to select the target branch. 
 pub fn switch() {
     let options = SkimOptionsBuilder::default()
         .height(Some("50%"))
@@ -11,10 +27,10 @@ pub fn switch() {
         .build()
         .unwrap();
 
-    let input = command_output("git", vec!["branch", "-a"]);
+    let branches = command_output("git", vec!["branch", "-a"]);
 
     let item_reader = SkimItemReader::default();
-    let items = item_reader.of_bufread(Cursor::new(input));
+    let items = item_reader.of_bufread(Cursor::new(branches));
 
     let selected_items = Skim::run_with(&options, Some(items))
         .map(|out| out.selected_items)
@@ -27,19 +43,6 @@ pub fn switch() {
         if confirm().is_ok() {
            execute(command).expect("There was an error executing git command");
         }
-    }
-}
-
-
-
-pub fn create() {
-    let input = read_user_input();
-    let concatenated_input = sanitize(concatenate(input));
-    let command = prepend_gitcheckout(concatenated_input);
-    println!("{}", command);
-
-    if confirm().is_ok() {
-       execute(command).expect("There was an error executing git command");
     }
 }
 
@@ -91,6 +94,7 @@ fn sanitize(haystack: String) -> String {
 
     clean
 }
+
 
 #[test]
 fn it_handles_line_breaks() {
