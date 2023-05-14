@@ -1,6 +1,36 @@
 use aho_corasick::AhoCorasick;
-use std::io::{self, BufRead, Error};
-use super::utils::execute;
+use super::utils::{execute, confirm, command_output};
+extern crate skim;
+use skim::prelude::*;
+use std::io::Cursor;
+
+pub fn switch() {
+    let options = SkimOptionsBuilder::default()
+        .height(Some("50%"))
+        .multi(true)
+        .build()
+        .unwrap();
+
+    let input = command_output("git", vec!["branch", "-a"]);
+
+    let item_reader = SkimItemReader::default();
+    let items = item_reader.of_bufread(Cursor::new(input));
+
+    let selected_items = Skim::run_with(&options, Some(items))
+        .map(|out| out.selected_items)
+        .unwrap_or_else(|| Vec::new());
+
+    for item in selected_items.iter() {
+        print!("{}{}", item.output(), "\n");
+        let command = "git checkout".to_string() + &item.output();
+        println!("{}", command);
+        if confirm().is_ok() {
+           execute(command).expect("There was an error executing git command");
+        }
+    }
+}
+
+
 
 pub fn create() {
     let input = read_user_input();
@@ -14,23 +44,6 @@ pub fn create() {
 }
 
 
-fn confirm() -> Result<bool, Error> {
-    let mut input = String::new();
-    let stdin = io::stdin();
-
-    ctrlc::set_handler(move || {
-        println!("Bye...");
-        std::process::exit(1);
-    })
-    .expect("Error setting Ctrl-C handler");
-
-    println!("Press ENTER to confirm or Ctrl-C to cancel");
-
-    match stdin.lock().read_line(&mut input) {
-        Ok(_) => Ok(true),
-        Err(e) => Err(e),
-    }
-}
 
 fn prepend_gitcheckout(branch_name: String) -> String {
     "git checkout -b ".to_string() + &branch_name
@@ -39,7 +52,7 @@ fn prepend_gitcheckout(branch_name: String) -> String {
 fn read_user_input() -> Vec<String> {
     println!("Enter branch name, then press Enter and Ctrl-D to end:");
 
-    io::stdin()
+    std::io::stdin()
         .lines()
         .map(|e| e.unwrap_or("".to_string()))
         .collect()

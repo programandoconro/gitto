@@ -3,7 +3,9 @@ mod commands;
 fn main() {
     println!("Init");
 
-    commands::branch::create();
+    commands::branch::switch();
+//    commands::branch::create();
 
-    println!("{}", "Finished");
+    println!("Finished");
+
 }
