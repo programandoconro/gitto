@@ -457,6 +457,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gitto"
+version = "0.1.0"
+dependencies = [
+ "clap 4.2.7",
+ "ctrlc",
+ "skim",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -800,15 +809,6 @@ name = "rustversion"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4f3208ce4d8448b3f3e7d168a73f5e0c43a61e32930de3bceeccedb388b6bf06"
-
-[[package]]
-name = "rusty-git-commands"
-version = "0.1.0"
-dependencies = [
- "clap 4.2.7",
- "ctrlc",
- "skim",
-]
 
 [[package]]
 name = "scopeguard"

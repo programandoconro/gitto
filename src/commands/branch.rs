@@ -94,18 +94,18 @@ fn sanitize(haystack: String) -> String {
 }
 
 fn limit_name_len(name: String) -> String {
-    if name.len() < 255 {
+    if name.len() < 100 {
         name
     } else {
-        name[0..254].to_string()
+        name[0..99].to_string()
     }
 }
 
 #[test]
 fn it_limits_name_len() {
     let long_name = "very long name".repeat(100);
-    assert!(long_name.len() >= 255);
-    assert!(limit_name_len(long_name).len() < 255);
+    assert!(long_name.len() >= 100);
+    assert!(limit_name_len(long_name).len() < 100);
 }
 
 #[test]
