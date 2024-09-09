@@ -90,7 +90,9 @@ fn sanitize(haystack: String) -> String {
             }
         }
     }
-    limit_name_len(name)
+    let sanitized_branch_name = remove_last_hyphen(limit_name_len(name));
+
+    sanitized_branch_name
 }
 
 fn limit_name_len(name: String) -> String {
@@ -99,6 +101,24 @@ fn limit_name_len(name: String) -> String {
     } else {
         name[0..99].to_string()
     }
+}
+
+fn remove_last_hyphen(mut name: String) -> String {
+    if name.ends_with('-') {
+        name.pop();
+        name
+    } else {
+        name
+    }
+}
+
+#[test]
+fn it_removes_hyphen() {
+    let name_with_hyphen = "my-name-with-hyphen-in-the-end-".to_string();
+    assert_eq!(
+        remove_last_hyphen(name_with_hyphen),
+        "my-name-with-hyphen-in-the-end"
+    );
 }
 
 #[test]
