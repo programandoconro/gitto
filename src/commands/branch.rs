@@ -1,24 +1,9 @@
 use super::utils::{command_output, confirm, execute};
 extern crate skim;
+use colored::Colorize;
 use skim::prelude::*;
 use std::io::Cursor;
-
-///
-/// It creates a new git branch parsing and cleaning input. You can add multiples lines, incorrect
-///  and non ASCII characters, and it will concatenate the name  using "-" as separator.
-/// # Examples
-/// rusty-git-commands --command create
-///
-pub fn create() {
-    let input = read_user_input();
-    let concatenated_input = sanitize(concatenate(input));
-    let command = prepend_gitcheckout(concatenated_input);
-    println!("{}", command);
-
-    if confirm().is_ok() {
-        execute(&command).expect("There was an error executing git command");
-    }
-}
+use std::io::Write;
 
 ///
 /// It switches to a different branch interactively using fzf. You can search best match, move the
@@ -52,12 +37,69 @@ pub fn switch() {
     }
 }
 
+///
+/// It creates a new git branch parsing and cleaning input. You can add multiples lines, incorrect
+///  and non ASCII characters, and it will concatenate the name  using "-" as separator.
+/// # Examples
+/// rusty-git-commands --command create
+///
+pub fn create() {
+    let input = read_user_input();
+    let concatenated_input = sanitize(concatenate(input));
+    let command = prepend_gitcheckout(concatenated_input);
+    println!("{}", command.green());
+
+    if confirm().is_ok() {
+        execute(&command).expect(&"There was an error executing git command".red());
+    }
+}
+
 fn prepend_gitcheckout(branch_name: String) -> String {
     "git checkout -b ".to_string() + &branch_name
 }
 
+fn prepend_tag_to_branch_name(tag: String, branch_name: String) -> String {
+    tag + "-" + &branch_name
+}
+
+fn ask_for_tag(branch: String) -> String {
+    loop {
+        print!("{}", "Do you want to prepend a tag? (y/n): ".blue().bold());
+        std::io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        let input = input.trim().to_lowercase();
+
+        match input.as_str() {
+            "y" | "yes" => {
+                println!(
+                    "{}",
+                    "Please write the tag you want to prepend".blue().bold()
+                );
+                let mut tag = String::new();
+                std::io::stdin().read_line(&mut tag).unwrap();
+                return prepend_tag_to_branch_name(tag, branch);
+            }
+            "n" | "no" => {
+                println!("{}", "No tag was added".green());
+                return branch;
+            }
+            _ => {
+                println!("{}", "Invalid input, please enter 'y' or 'n'.".red());
+                return branch;
+            }
+        }
+    }
+}
+
 fn read_user_input() -> Vec<String> {
-    println!("Enter branch name, then press Enter and Ctrl-D to end:");
+    println!(
+        "{}",
+        "Enter branch name, then press Enter and Ctrl-D to end:"
+            .blue()
+            .bold()
+    );
 
     std::io::stdin()
         .lines()
@@ -75,7 +117,7 @@ fn concatenate(input: Vec<String>) -> String {
             concatenated = concatenated + &"-".to_string() + &new_line;
         }
     }
-    concatenated
+    ask_for_tag(concatenated)
 }
 
 fn sanitize(haystack: String) -> String {
@@ -110,6 +152,13 @@ fn remove_last_hyphen(mut name: String) -> String {
     } else {
         name
     }
+}
+#[test]
+fn it_prepends_tag() {
+    assert_eq!(
+        prepend_tag_to_branch_name("TAG".to_string(), "branch-name".to_string()),
+        "TAG-branch-name"
+    );
 }
 
 #[test]
